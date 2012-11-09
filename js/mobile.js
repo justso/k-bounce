@@ -1,590 +1,598 @@
 
-			var delta = [ 0, 0 ];
-			var stage = [ window.screenX, window.screenY, window.innerWidth, window.innerHeight ];
-			getBrowserDimensions();
+var delta = [ 0, 0 ];
+var stage = [ window.screenX, window.screenY, window.innerWidth, window.innerHeight ];
+getBrowserDimensions();
 
-			
-			var isMouseDown = false;
 
-			var worldAABB;
-			var world;
-			var iterations = 1;
-			var timeStep = 1 / 25; 
+var isMouseDown = false;
 
-			var walls = [];
-			var wall_thickness = 200;
-			var wallsSetted = false;
+var worldAABB;
+var world;
+var iterations = 1;
+var timeStep = 1 / 25;
 
-			var mouseJoint;
-			var mouse = { x: 0, y: 0 };
+var walls = [];
+var wall_thickness = 200;
+var wallsSetted = false;
 
-			var mouseOnClick = [];
+var mouseJoint;
+var mouse = {
+    x: 0,
+    y: 0
+};
 
-			var elements = [];
-			var bodies = [];
-			var properties = [];
+var mouseOnClick = [];
 
-			var query, page = 0;
+var elements = [];
+var bodies = [];
+var properties = [];
 
-			var gWebSearch, gImageSearch;
-			var imFeelingLuckyMode = false;
-			var resultBodies = [];
+var query, page = 0;
 
-			var gravity = { x: 0, y: 1 };
-			
-			init();
-			setInterval( loop, 25 );
+var gWebSearch, gImageSearch;
+var imFeelingLuckyMode = false;
+var resultBodies = [];
 
-			
+var gravity = {
+    x: 0,
+    y: 1
+};
 
-			if ( location.search != "" ) {
+init();
+setInterval( loop, 25 );
 
-				var params = location.search.substr(1).split("&")
 
-				for (var i = 0; i < params.length; i++) {
 
-					var param = params[i].split("=");
+if ( location.search != "" ) {
 
-					if (param[0] == "q") {
+    var params = location.search.substr(1).split("&")
 
-						document.getElementById('q').value = param[1];
-						run();
-						break;
-					}
-				}
-			}
+    for (var i = 0; i < params.length; i++) {
 
-			//
-			
+        var param = params[i].split("=");
 
-			function init() {
+        if (param[0] == "q") {
 
-				
+            document.getElementById('q').value = param[1];
+            run();
+            break;
+        }
+    }
+}
 
-				document.addEventListener( 'mousedown', onDocumentMouseDown, false );
-				document.addEventListener( 'mouseup', onDocumentMouseUp, false );
-				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-				// document.ondblclick = onDocumentDoubleClick;
+//
 
-				document.addEventListener( 'keyup', onDocumentKeyUp, false );
 
+function init() {
 
-				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
-				document.addEventListener( 'touchmove', onDocumentTouchMove, false );
-				document.addEventListener( 'touchend', onDocumentTouchEnd, false );
 
-				window.addEventListener( 'deviceorientation', onWindowDeviceOrientation, false );
 
-				// init box2d
+    document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+    document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+    document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+    // document.ondblclick = onDocumentDoubleClick;
 
-				worldAABB = new b2AABB();
-				worldAABB.minVertex.Set( - 200, - 200 );
-				worldAABB.maxVertex.Set( window.innerWidth + 200, window.innerHeight + 200 );
+    document.addEventListener( 'keyup', onDocumentKeyUp, false );
 
-				world = new b2World( worldAABB, new b2Vec2( 0, 0 ), true );
 
-				// walls
-				setWalls();
+    document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+    document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+    document.addEventListener( 'touchend', onDocumentTouchEnd, false );
 
-				// Get box2d elements
+    window.addEventListener( 'deviceorientation', onWindowDeviceOrientation, false );
 
-				elements = getElementsByClass("box2d");
+    // init box2d
 
-				for ( var i = 0; i < elements.length; i ++ ) {
+    worldAABB = new b2AABB();
+    worldAABB.minVertex.Set( - 200, - 200 );
+    worldAABB.maxVertex.Set( window.innerWidth + 200, window.innerHeight + 200 );
 
-					properties[i] = getElementProperties( elements[i] );
+    world = new b2World( worldAABB, new b2Vec2( 0, 0 ), true );
 
-				}
+    // walls
+    setWalls();
 
-				for ( var i = 0; i < elements.length; i ++ ) {
+    // Get box2d elements
 
-					var element = elements[ i ];
-					element.style.position = 'absolute';
-					element.style.left = properties[i][0] + 'px';
-					element.style.top = properties[i][1] + 'px';
-					element.style.width = properties[i][2] + 'px';
-					element.addEventListener( 'mousedown', onElementMouseDown, false );
-					element.addEventListener( 'mouseup', onElementMouseUp, false );
-					element.addEventListener( 'click', onElementClick, false );
+    elements = getElementsByClass("box2d");
 
-					bodies[i] = createBox( world, properties[i][0] + (properties[i][2] >> 1), properties[i][1] + (properties[i][3] >> 1), properties[i][2] / 2, properties[i][3] / 2, false );
+    for ( var i = 0; i < elements.length; i ++ ) {
 
-					// Clean position dependencies
+        properties[i] = getElementProperties( elements[i] );
 
-					while ( element.offsetParent ) {
+    }
 
-						element = element.offsetParent;
-						element.style.position = 'static';
+    for ( var i = 0; i < elements.length; i ++ ) {
 
-					}
+        var element = elements[ i ];
+        element.style.position = 'absolute';
+        element.style.left = properties[i][0] + 'px';
+        element.style.top = properties[i][1] + 'px';
+        element.style.width = properties[i][2] + 'px';
+        element.addEventListener( 'mousedown', onElementMouseDown, false );
+        element.addEventListener( 'mouseup', onElementMouseUp, false );
+        element.addEventListener( 'click', onElementClick, false );
 
-				}
+        bodies[i] = createBox( world, properties[i][0] + (properties[i][2] >> 1), properties[i][1] + (properties[i][3] >> 1), properties[i][2] / 2, properties[i][3] / 2, false );
 
-			}
+        // Clean position dependencies
 
-			
-			//
+        while ( element.offsetParent ) {
 
-			function onDocumentMouseDown( event ) {
+            element = element.offsetParent;
+            element.style.position = 'static';
 
-				isMouseDown = true;
+        }
 
-			}
+    }
 
-			function onDocumentMouseUp( event ) {
+}
 
-				isMouseDown = false;
 
-			}
+//
 
-			function onDocumentMouseMove( event ) {
+function onDocumentMouseDown( event ) {
 
-				
+    isMouseDown = true;
 
-				mouse.x = event.clientX;
-				mouse.y = event.clientY;
+}
 
-			}
+function onDocumentMouseUp( event ) {
 
-			function onDocumentKeyUp( event ) {
+    isMouseDown = false;
 
-				if ( event.keyCode == 13 ) search();
+}
 
-			}
+function onDocumentMouseMove( event ) {
 
-			function onDocumentTouchStart( event ) {
 
-				if ( event.touches.length == 1 ) {
 
-				
+    mouse.x = event.clientX;
+    mouse.y = event.clientY;
 
-					mouse.x = event.touches[0].pageX;
-					mouse.y = event.touches[0].pageY;
-					isMouseDown = true;
-				}
-			}
+}
 
-			function onDocumentTouchMove( event ) {
+function onDocumentKeyUp( event ) {
 
-				if ( event.touches.length == 1 ) {
+    if ( event.keyCode == 13 ) search();
 
-					event.preventDefault();
+}
 
-					mouse.x = event.touches[0].pageX;
-					mouse.y = event.touches[0].pageY;
+function onDocumentTouchStart( event ) {
 
-				}
+    if ( event.touches.length == 1 ) {
 
-			}
 
-			function onDocumentTouchEnd( event ) {
 
-				if ( event.touches.length == 0 ) {
+        mouse.x = event.touches[0].pageX;
+        mouse.y = event.touches[0].pageY;
+        isMouseDown = true;
+    }
+}
 
-					isMouseDown = false;
-				}
+function onDocumentTouchMove( event ) {
 
-			}
+    if ( event.touches.length == 1 ) {
 
-			function onWindowDeviceOrientation( event ) {
+        event.preventDefault();
 
-				if ( event.beta ) {
+        mouse.x = event.touches[0].pageX;
+        mouse.y = event.touches[0].pageY;
 
-					gravity.x = Math.sin( event.gamma * Math.PI / 180 );
-					gravity.y = Math.sin( ( Math.PI / 4 ) + event.beta * Math.PI / 180 );
+    }
 
-				}
+}
 
-			}
+function onDocumentTouchEnd( event ) {
 
-			//
+    if ( event.touches.length == 0 ) {
 
-			function onElementMouseDown( event ) {
+        isMouseDown = false;
+    }
 
-				event.preventDefault();
+}
 
-				mouseOnClick[0] = event.clientX;
-				mouseOnClick[1] = event.clientY;
+function onWindowDeviceOrientation( event ) {
 
-			}
+    if ( event.beta ) {
 
-			function onElementMouseUp( event ) {
+        gravity.x = Math.sin( event.gamma * Math.PI / 180 );
+        gravity.y = Math.sin( ( Math.PI / 4 ) + event.beta * Math.PI / 180 );
 
-				event.preventDefault();
+    }
 
-			}
+}
 
-			function onElementClick( event ) {
+//
 
-				var range = 5;
+function onElementMouseDown( event ) {
 
-				if ( mouseOnClick[0] > event.clientX + range || mouseOnClick[0] < event.clientX - range &&
-				     mouseOnClick[1] > event.clientY + range || mouseOnClick[1] < event.clientY - range ) {
+    event.preventDefault();
 
-					event.preventDefault();
+    mouseOnClick[0] = event.clientX;
+    mouseOnClick[1] = event.clientY;
 
-				}
+}
 
-				if ( event.target == document.getElementById( 'btnG' ) ) search();
-				if ( event.target == document.getElementById( 'btnI' ) ) imFeelingLucky();
-				if ( event.target == document.getElementById( 'q' ) ) document.getElementById('q').focus();
+function onElementMouseUp( event ) {
 
-			}
+    event.preventDefault();
 
-			// API STUFF
+}
 
-			function search() {
+function onElementClick( event ) {
 
-				if ( !isRunning ) {
+    var range = 5;
 
-					run();
+    if ( mouseOnClick[0] > event.clientX + range || mouseOnClick[0] < event.clientX - range &&
+        mouseOnClick[1] > event.clientY + range || mouseOnClick[1] < event.clientY - range ) {
 
-				}
+        event.preventDefault();
 
-				if ( query == document.getElementById('q').value ) {
+    }
 
-					page ++;
+    if ( event.target == document.getElementById( 'btnG' ) ) search();
+    if ( event.target == document.getElementById( 'btnI' ) ) imFeelingLucky();
+    if ( event.target == document.getElementById( 'q' ) ) document.getElementById('q').focus();
 
-					gWebSearch.gotoPage( page );
-					gImageSearch.gotoPage( page );
+}
 
-				} else {
+// API STUFF
 
-					page = 0;
+function search() {
 
-					query = document.getElementById('q').value;
+    if ( !isRunning ) {
 
-					gWebSearch.execute( query );
-					gImageSearch.execute( query );
+        run();
 
-				}
+    }
 
-				return false;
+    if ( query == document.getElementById('q').value ) {
 
-			}
+        page ++;
 
-			function imFeelingLucky() {
+        gWebSearch.gotoPage( page );
+        gImageSearch.gotoPage( page );
 
-				imFeelingLuckyMode = true;
-				gWebSearch.execute( document.getElementById('q').value );
+    } else {
 
-				return false;
+        page = 0;
 
-			}
+        query = document.getElementById('q').value;
 
-			function onWebSearch() {
+        gWebSearch.execute( query );
+        gImageSearch.execute( query );
 
-				if ( imFeelingLuckyMode ) {
+    }
 
-					location.href = gWebSearch.results[0].unescapedUrl;
-					return;
+    return false;
 
-				}
+}
 
-				for ( var i = 0; i < gWebSearch.results.length; i ++ ) {
+function imFeelingLucky() {
 
-					addWeb( gWebSearch.results[i] );
+    imFeelingLuckyMode = true;
+    gWebSearch.execute( document.getElementById('q').value );
 
-				}
+    return false;
 
-			}
+}
 
-			function onImageSearch() {
+function onWebSearch() {
 
-				for ( var i = 0; i < gImageSearch.results.length; i ++ ) {
+    if ( imFeelingLuckyMode ) {
 
-					addImage( gImageSearch.results[i] );
+        location.href = gWebSearch.results[0].unescapedUrl;
+        return;
 
-				}
+    }
 
-			}
+    for ( var i = 0; i < gWebSearch.results.length; i ++ ) {
 
-			function addWeb( data ) {
+        addWeb( gWebSearch.results[i] );
 
-				var element = document.createElement('div');
-				element.innerHTML = '<div class="result"><div class="title"><a href="' + data.unescapedUrl + '" target="_blank">' + data.title + '</a></div><div class="url">' + data.visibleUrl + '</div><div class="content">' + data.content + '</div>';
+    }
 
-				document.body.appendChild( element );
+}
 
-				properties.push( [ Math.random() * ( window.innerWidth / 2 ), - 200, element.width, element.height ] );
+function onImageSearch() {
 
-				var i = properties.length - 1;
+    for ( var i = 0; i < gImageSearch.results.length; i ++ ) {
 
-				element.style.position = 'absolute';
-				element.style.left = 0 + 'px';
-				element.style.top = - 100 + 'px';
-				element.style.backgroundColor = '#ffffff';
-				element.addEventListener( 'mousedown', onElementMouseDown, false );
-				element.addEventListener( 'mouseup', onElementMouseUp, false );
-				element.addEventListener( 'click', onElementClick, false );
+        addImage( gImageSearch.results[i] );
 
-				elements[i] = element;
+    }
 
-				resultBodies.push( bodies[i] = createBox( world, properties[i][0] + ( properties[i][2] >> 1 ), properties[i][1] + ( properties[i][3] >> 1 ), properties[i][2] / 2, properties[i][3] / 2, false, element ) );
+}
 
-			}
+function addWeb( data ) {
 
-			function addImage( data ) {
+    var element = document.createElement('div');
+    element.innerHTML = '<div class="result"><div class="title"><a href="' + data.unescapedUrl + '" target="_blank">' + data.title + '</a></div><div class="url">' + data.visibleUrl + '</div><div class="content">' + data.content + '</div>';
 
-				var element = document.createElement( 'img' );
-				element.style.display = 'none';
-				element.style.cursor = 'pointer';
-				element.addEventListener( 'load', function () {
+    document.body.appendChild( element );
 
-					properties.push( [ Math.random() * ( window.innerWidth / 2 ),  -200, element.width, element.height ] );
+    properties.push( [ Math.random() * ( window.innerWidth / 2 ), - 200, element.width, element.height ] );
 
-					var i = properties.length - 1;
+    var i = properties.length - 1;
 
-					element.style.display = 'block';
-					element.style.position = 'absolute';
-					element.style.left = 0 + 'px';
-					element.style.top = 200 + 'px';
-					element.style.backgroundColor = '#ffffff';
-					element.addEventListener( 'mousedown', onElementMouseDown, false );
-					element.addEventListener( 'mouseup', onElementMouseUp, false );
-					element.addEventListener( 'click', onElementClick, false );
-					element.addEventListener( 'click', function ( event ) {
+    element.style.position = 'absolute';
+    element.style.left = 0 + 'px';
+    element.style.top = - 100 + 'px';
+    element.style.backgroundColor = '#ffffff';
+    element.addEventListener( 'mousedown', onElementMouseDown, false );
+    element.addEventListener( 'mouseup', onElementMouseUp, false );
+    element.addEventListener( 'click', onElementClick, false );
 
-						var range = 5;
+    elements[i] = element;
 
-						if ( mouseOnClick[0] < event.clientX + range && mouseOnClick[0] > event.clientX - range &&
-						     mouseOnClick[1] < event.clientY + range && mouseOnClick[1] > event.clientY - range ) {
+    resultBodies.push( bodies[i] = createBox( world, properties[i][0] + ( properties[i][2] >> 1 ), properties[i][1] + ( properties[i][3] >> 1 ), properties[i][2] / 2, properties[i][3] / 2, false, element ) );
 
-							window.open( data.unescapedUrl );
+}
 
-						}
+function addImage( data ) {
 
-					}, false );
+    var element = document.createElement( 'img' );
+    element.style.display = 'none';
+    element.style.cursor = 'pointer';
+    element.addEventListener( 'load', function () {
 
-					elements[i] = element;
+        properties.push( [ Math.random() * ( window.innerWidth / 2 ),  -200, element.width, element.height ] );
 
-					resultBodies.push( bodies[i] = createBox( world, properties[i][0] + ( properties[i][2] >> 1 ), properties[i][1] + ( properties[i][3] >> 1 ), properties[i][2] / 2, properties[i][3] / 2, false, element ) );
+        var i = properties.length - 1;
 
-				}, false );
-				element.src = data.tbUrl;
-				document.body.appendChild( element );
+        element.style.display = 'block';
+        element.style.position = 'absolute';
+        element.style.left = 0 + 'px';
+        element.style.top = 200 + 'px';
+        element.style.backgroundColor = '#ffffff';
+        element.addEventListener( 'mousedown', onElementMouseDown, false );
+        element.addEventListener( 'mouseup', onElementMouseUp, false );
+        element.addEventListener( 'click', onElementClick, false );
+        element.addEventListener( 'click', function ( event ) {
 
-			}
+            var range = 5;
 
-			//
+            if ( mouseOnClick[0] < event.clientX + range && mouseOnClick[0] > event.clientX - range &&
+                mouseOnClick[1] < event.clientY + range && mouseOnClick[1] > event.clientY - range ) {
 
-			function loop() {
+                window.open( data.unescapedUrl );
 
-				if (getBrowserDimensions())
-					setWalls();
+            }
 
-				delta[0] += (0 - delta[0]) * 0.5;
-				delta[1] += (0 - delta[1]) * 0.5;
+        }, false );
 
-				world.m_gravity.x = gravity.x * 350 + delta[0];
-				world.m_gravity.y = gravity.y * 350 + delta[0];
+        elements[i] = element;
 
-				mouseDrag();
-				world.Step(timeStep, iterations);
+        resultBodies.push( bodies[i] = createBox( world, properties[i][0] + ( properties[i][2] >> 1 ), properties[i][1] + ( properties[i][3] >> 1 ), properties[i][2] / 2, properties[i][3] / 2, false, element ) );
 
-				for ( i = 0; i < elements.length; i++ ) {
+    }, false );
+    element.src = data.tbUrl;
+    document.body.appendChild( element );
 
-					var body = bodies[i];
-					var element = elements[i];
+}
 
-					element.style.left = (body.m_position0.x - (properties[i][2] >> 1)) + 'px';
-					element.style.top = (body.m_position0.y - (properties[i][3] >> 1)) + 'px';
+//
 
-					var style = 'rotate(' + (body.m_rotation0 * 57.2957795) + 'deg)';
+function loop() {
 
-					element.style.transform = style;
-					element.style.WebkitTransform = style + ' translateZ(0)'; // Force HW Acceleration
-					element.style.MozTransform = style;
-					element.style.OTransform = style;
-					element.style.msTransform = style;
-				}
-			}
+    if (getBrowserDimensions())
+        setWalls();
 
+    delta[0] += (0 - delta[0]) * 0.5;
+    delta[1] += (0 - delta[1]) * 0.5;
 
-			// .. BOX2D UTILS
+    world.m_gravity.x = gravity.x * 350 + delta[0];
+    world.m_gravity.y = gravity.y * 350 + delta[0];
 
-			function createBox(world, x, y, width, height, fixed, element) {
+    mouseDrag();
+    world.Step(timeStep, iterations);
 
-				if (typeof(fixed) == 'undefined')
-					fixed = true;
+    for ( i = 0; i < elements.length; i++ ) {
 
-				var boxSd = new b2BoxDef();
+        var body = bodies[i];
+        var element = elements[i];
 
-				if (!fixed)
-			    boxSd.density = 1;
-				boxSd.friction = .1;
-                boxSd.restitution = .9;
+        element.style.left = (body.m_position0.x - (properties[i][2] >> 1)) + 'px';
+        element.style.top = (body.m_position0.y - (properties[i][3] >> 1)) + 'px';
 
-				boxSd.extents.Set(width, height);
+        var style = 'rotate(' + (body.m_rotation0 * 57.2957795) + 'deg)';
 
-				var boxBd = new b2BodyDef();
-				
-				
-				boxBd.AddShape(boxSd);
-				boxBd.position.Set(x,y);
-				boxBd.userData = {element: element};
+        element.style.transform = style;
+        element.style.WebkitTransform = style + ' translateZ(0)'; // Force HW Acceleration
+        element.style.MozTransform = style;
+        element.style.OTransform = style;
+        element.style.msTransform = style;
+    }
+}
 
-				return world.CreateBody(boxBd)
-			}
 
-			function mouseDrag() {
+// .. BOX2D UTILS
 
-				// mouse press
-				if (isMouseDown && !mouseJoint) {
+function createBox(world, x, y, width, height, fixed, element) {
 
-					var body = getBodyAtMouse();
+    if (typeof(fixed) == 'undefined')
+        fixed = true;
 
-					if (body) {
+    var boxSd = new b2BoxDef();
 
-						var md = new b2MouseJointDef();
-						md.body1 = world.m_groundBody;
-						md.body2 = body;
-						md.target.Set(mouse.x, mouse.y);
-						md.maxForce = 30000.0 * body.m_mass;
-						md.timeStep = timeStep;
-						mouseJoint = world.CreateJoint(md);
-						body.WakeUp();
-					}
-				}
+    if (!fixed)
+        boxSd.density = 1;
+    boxSd.friction = .1;
+    boxSd.restitution = .9;
 
-				// mouse release
-				if (!isMouseDown) {
+    boxSd.extents.Set(width, height);
 
-					if (mouseJoint) {
+    var boxBd = new b2BodyDef();
 
-						world.DestroyJoint(mouseJoint);
-						mouseJoint = null;
-					}
-				}
 
-				// mouse move
-				if (mouseJoint) {
+    boxBd.AddShape(boxSd);
+    boxBd.position.Set(x,y);
+    boxBd.userData = {
+        element: element
+    };
 
-					var p2 = new b2Vec2(mouse.x, mouse.y);
-					mouseJoint.SetTarget(p2);
-				}
-			}
+    return world.CreateBody(boxBd)
+}
 
-			function getBodyAtMouse() {
+function mouseDrag() {
 
-				// Make a small box.
-				var mousePVec = new b2Vec2();
-				mousePVec.Set(mouse.x, mouse.y);
+    // mouse press
+    if (isMouseDown && !mouseJoint) {
 
-				var aabb = new b2AABB();
-				aabb.minVertex.Set(mouse.x - 1, mouse.y - 1);
-				aabb.maxVertex.Set(mouse.x + 1, mouse.y + 1);
+        var body = getBodyAtMouse();
 
-				// Query the world for overlapping shapes.
-				var k_maxCount = 10;
-				var shapes = [];
-				var count = world.Query(aabb, shapes, k_maxCount);
-				var body = null;
+        if (body) {
 
-				for ( var i = 0; i < count; i ++ ) {
+            var md = new b2MouseJointDef();
+            md.body1 = world.m_groundBody;
+            md.body2 = body;
+            md.target.Set(mouse.x, mouse.y);
+            md.maxForce = 30000.0 * body.m_mass;
+            md.timeStep = timeStep;
+            mouseJoint = world.CreateJoint(md);
+            body.WakeUp();
+        }
+    }
 
-					if (shapes[i].m_body.IsStatic() == false) {
+    // mouse release
+    if (!isMouseDown) {
 
-						if ( shapes[i].TestPoint(mousePVec) ) {
+        if (mouseJoint) {
 
-							body = shapes[i].m_body;
-							break;
-						}
-					}
-				}
+            world.DestroyJoint(mouseJoint);
+            mouseJoint = null;
+        }
+    }
 
-				return body;
-			}
+    // mouse move
+    if (mouseJoint) {
 
-			function setWalls() {
+        var p2 = new b2Vec2(mouse.x, mouse.y);
+        mouseJoint.SetTarget(p2);
+    }
+}
 
-				if (wallsSetted) {
+function getBodyAtMouse() {
 
-					world.DestroyBody(walls[0]);
-					world.DestroyBody(walls[1]);
-					world.DestroyBody(walls[2]);
-					world.DestroyBody(walls[3]);
+    // Make a small box.
+    var mousePVec = new b2Vec2();
+    mousePVec.Set(mouse.x, mouse.y);
 
-					walls[0] = null; 
-					walls[1] = null;
-					walls[2] = null;
-					walls[3] = null;
-				}
+    var aabb = new b2AABB();
+    aabb.minVertex.Set(mouse.x - 1, mouse.y - 1);
+    aabb.maxVertex.Set(mouse.x + 1, mouse.y + 1);
 
-				walls[0] = createBox(world, stage[2] / 2, - wall_thickness, stage[2], wall_thickness);
-				walls[1] = createBox(world, stage[2] / 2, stage[3] + wall_thickness, stage[2], wall_thickness);
-				walls[2] = createBox(world, - wall_thickness, stage[3] / 2, wall_thickness, stage[3]);
-				walls[3] = createBox(world, stage[2] + wall_thickness, stage[3] / 2, wall_thickness, stage[3]);	
+    // Query the world for overlapping shapes.
+    var k_maxCount = 10;
+    var shapes = [];
+    var count = world.Query(aabb, shapes, k_maxCount);
+    var body = null;
 
-				wallsSetted = true;
+    for ( var i = 0; i < count; i ++ ) {
 
-			}
+        if (shapes[i].m_body.IsStatic() == false) {
 
-			// .. UTILS
+            if ( shapes[i].TestPoint(mousePVec) ) {
 
-			function getElementsByClass( searchClass ) {
+                body = shapes[i].m_body;
+                break;
+            }
+        }
+    }
 
-				var classElements = [];
-				var els = document.getElementsByTagName('*');
-				var elsLen = els.length
+    return body;
+}
 
-				for (i = 0, j = 0; i < elsLen; i++) {
+function setWalls() {
 
-					var classes = els[i].className.split(' ');
-					for (k = 0; k < classes.length; k++)
-						if ( classes[k] == searchClass )
-							classElements[j++] = els[i];
-				}
+    if (wallsSetted) {
 
-				return classElements;
-			}
+        world.DestroyBody(walls[0]);
+        world.DestroyBody(walls[1]);
+        world.DestroyBody(walls[2]);
+        world.DestroyBody(walls[3]);
 
-			function getElementProperties( element ) {
+        walls[0] = null;
+        walls[1] = null;
+        walls[2] = null;
+        walls[3] = null;
+    }
 
-				var x = 0;
-				var y = 0;
-				var width = element.offsetWidth;
-				var height = element.offsetHeight;
+    walls[0] = createBox(world, stage[2] / 2, - wall_thickness, stage[2], wall_thickness);
+    walls[1] = createBox(world, stage[2] / 2, stage[3] + wall_thickness, stage[2], wall_thickness);
+    walls[2] = createBox(world, - wall_thickness, stage[3] / 2, wall_thickness, stage[3]);
+    walls[3] = createBox(world, stage[2] + wall_thickness, stage[3] / 2, wall_thickness, stage[3]);
 
-				do {
+    wallsSetted = true;
 
-					x += element.offsetLeft;
-					y += element.offsetTop;
+}
 
-				} while ( element = element.offsetParent );
+// .. UTILS
 
-				return [ x, y, width, height ];
-			}
+function getElementsByClass( searchClass ) {
 
-			function getBrowserDimensions() {
+    var classElements = [];
+    var els = document.getElementsByTagName('*');
+    var elsLen = els.length
 
-				var changed = false;
+    for (i = 0, j = 0; i < elsLen; i++) {
 
-				if ( stage[0] != window.screenX ) {
+        var classes = els[i].className.split(' ');
+        for (k = 0; k < classes.length; k++)
+            if ( classes[k] == searchClass )
+                classElements[j++] = els[i];
+    }
 
-					delta[0] = (window.screenX - stage[0]) * 50;
-					stage[0] = window.screenX;
-					changed = true;
-				}
+    return classElements;
+}
 
-				if ( stage[1] != window.screenY ) {
+function getElementProperties( element ) {
 
-					delta[1] = (window.screenY - stage[1]) * 50;
-					stage[1] = window.screenY;
-					changed = true;
-				}
+    var x = 0;
+    var y = 0;
+    var width = element.offsetWidth;
+    var height = element.offsetHeight;
 
-				if ( stage[2] != window.innerWidth ) {
+    do {
 
-					stage[2] = window.innerWidth;
-					changed = true;
-				}
+        x += element.offsetLeft;
+        y += element.offsetTop;
 
-				if ( stage[3] != window.innerHeight ) {
+    } while ( element = element.offsetParent );
 
-					stage[3] = window.innerHeight;
-					changed = true;
-				}
+    return [ x, y, width, height ];
+}
 
-				return changed;
-			}
+function getBrowserDimensions() {
+
+    var changed = false;
+
+    if ( stage[0] != window.screenX ) {
+
+        delta[0] = (window.screenX - stage[0]) * 50;
+        stage[0] = window.screenX;
+        changed = true;
+    }
+
+    if ( stage[1] != window.screenY ) {
+
+        delta[1] = (window.screenY - stage[1]) * 50;
+        stage[1] = window.screenY;
+        changed = true;
+    }
+
+    if ( stage[2] != window.innerWidth ) {
+
+        stage[2] = window.innerWidth;
+        changed = true;
+    }
+
+    if ( stage[3] != window.innerHeight ) {
+
+        stage[3] = window.innerHeight;
+        changed = true;
+    }
+
+    return changed;
+}
